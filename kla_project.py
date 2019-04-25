@@ -192,11 +192,55 @@ def find_matching_weeks(farm_data_dict, future_weather_dict):
 
 	for future_week in future_weather_dict:
 		matching_weeks[future_week] = []
+		rain_amnt = future_weather_dict[future_week]['Rain Forecast']
+		sun_temp = future_weather_dict[future_week]['Sun/Temp Forecast']
 		for farm in farm_data_dict:
 			for week in farm_data_dict[farm]:
-				if ((farm_data_dict[farm][week]['Rain'] == future_weather_dict[future_week]['Rain Forecast']) and (farm_data_dict[farm][week]['Sun/Temp'] == future_weather_dict[future_week]['Sun/Temp Forecast'])):
+				if (((farm_data_dict[farm][week]['Rain'] <= (rain_amnt + 0.01)) and (farm_data_dict[farm][week]['Rain'] >= (rain_amnt - 0.01))) and (farm_data_dict[farm][week]['Sun/Temp'] >= (sun_temp - 3)) and (farm_data_dict[farm][week]['Sun/Temp'] <= (sun_temp + 3))):
 					matching_weeks[future_week] += [farm_data_dict[farm][week]]
 	return matching_weeks
+
+def decide_recommendations(matching_weeks_dict):
+	reccomendation_dict = {}
+	highest_yield_data = {}
+	for week in matching_weeks_dict:
+		highest_yield = 0
+		best_match = {}
+		for match in matching_weeks_dict[week]:
+			if match['Weekly Yield'] > highest_yield:
+				highest_yield = match['Weekly Yield']
+				best_match = match
+		highest_yield_data[week] = best_match
+	print(highest_yield_data)
+	
+	for week in highest_yield_data:
+		if highest_yield_data[week] != {}:
+			print(week)
+			reccomendation_dict[week] = {}
+			fertilizer_amnt = 0
+			fertilizer_amnt = highest_yield_data[week]['Fertilizer']
+			if highest_yield_data[week]['Fertilizer Added'] != 'nan':
+				fertilizer_amnt += highest_yield_data[week]['Fertilizer Added']
+			mulch_amnt = 0
+			mulch_amnt = highest_yield_data[week]['Mulch']
+			if highest_yield_data[week]['Mulch Added'] != 'nan':
+				mulch_amnt += highest_yield_data[week]['Mulch Added']
+			watering_amnt = 0
+			if highest_yield_data[week]['Watering'] != 'nan':
+				watering_amnt += highest_yield_data[week]['Watering']
+			reccomendation_dict[week]['Fertilizer Input'] = fertilizer_amnt
+			reccomendation_dict[week]['Mulch Input'] = mulch_amnt
+			reccomendation_dict[week]['Watering Input'] = watering_amnt
+		else:
+			reccomendation_dict[week] = 'empty week'
+	print(reccomendation_dict)
+
+
+
+#def write_reccomendations(matching_weeks_dict):
+	#writer = pd.ExcelWriter('veganBerrieData.xlsx', engine='xlsxwriter')
+	#df.to_excel(writer, sheet_name='National Weather Predictions')
+
 
 
 data_from_farms = makeData_Dict()
@@ -204,7 +248,8 @@ national_weather_data = weatherPredictions()
 
 #print(data_from_farms)
 matching_dict = find_matching_weeks(data_from_farms, national_weather_data)
-print(matching_dict)
+
+decide_recommendations(matching_dict)
 
 
 
